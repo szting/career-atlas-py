@@ -27,13 +27,14 @@ def check_simple_password():
             password = st.text_input(
                 "Password", 
                 type="password", 
-                placeholder="Enter password"
+                placeholder="Enter password",
+                key="password_input"
             )
             
             submitted = st.form_submit_button("Login", use_container_width=True)
             
             if submitted:
-                if password == "Cl@r1tyC2r33r":  # Fixed typo in password
+                if password == "Cl@r1tyC2r3r":
                     st.session_state.authenticated = True
                     st.session_state.auth_time = datetime.now()
                     st.success("✅ Login successful!")
@@ -52,3 +53,7 @@ def logout():
     st.session_state.authenticated = False
     if 'auth_time' in st.session_state:
         del st.session_state.auth_time
+    # Clear all session state on logout
+    for key in list(st.session_state.keys()):
+        if key not in ['authenticated']:
+            del st.session_state[key]

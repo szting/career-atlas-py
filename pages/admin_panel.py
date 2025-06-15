@@ -44,14 +44,12 @@ def render():
         # OpenAI API Key
         api_key = st.text_input(
             "OpenAI API Key:",
-            value=st.session_state.api_keys.get('openai', '') if 'api_keys' in st.session_state else '',
+            value=st.session_state.get('openai_api_key', ''),
             type="password"
         )
         
         if st.button("Save API Key"):
-            if 'api_keys' not in st.session_state:
-                st.session_state.api_keys = {}
-            st.session_state.api_keys['openai'] = api_key
+            st.session_state.openai_api_key = api_key
             # In production, save to secure storage
             st.success("API key saved!")
         
@@ -65,33 +63,29 @@ def render():
     with tab3:
         st.subheader("📈 Analytics Dashboard")
         
-        # Debug information
-        st.caption("Debug: Session State Keys")
-        st.caption(f"Available keys: {list(st.session_state.keys())}")
+        # Check for assessment data in session state
+        has_assessment_data = False
         
-        # Get actual assessment data from session state
-        # Check if RIASEC scores exist and have actual values
-        riasec_scores = st.session_state.get('riasec_scores', {})
-        has_riasec_data = any(score > 0 for score in riasec_scores.values()) if riasec_scores else False
-        
-        skills_confidence = st.session_state.get('skills_confidence', {})
-        has_skills_data = len(skills_confidence) > 0
-        
-        work_values = st.session_state.get('work_values', [])
-        has_values_data = len(work_values) > 0
+        # Check if any assessment has been completed
+        if (st.session_state.get('riasec_scores') and 
+            any(score > 0 for score in st.session_state.riasec_scores.values())):
+            has_assessment_data = True
         
         # Calculate metrics
-        total_assessments = 1 if has_riasec_data else 0
+        total_assessments = 1 if has_assessment_data else 0
         active_users = 1 if st.session_state.get('authenticated') else 0
         
-        # Calculate completion rate
+        # Calculate completion rate based on actual progress
         completion_rate = 0
-        if has_riasec_data and has_skills_data and has_values_data:
-            completion_rate = 100
-        elif has_riasec_data and has_skills_data:
-            completion_rate = 66
-        elif has_riasec_data:
-            completion_rate = 33
+        if has_assessment_data:
+            steps_completed = 0
+            if any(score > 0 for score in st.session_state.get('riasec_scores', {}).values()):
+                steps_completed += 1
+            if st.session_state.get('skills_confidence'):
+                steps_completed += 1
+            if st.session_state.get('work_values'):
+                steps_completed += 1
+            completion_rate = (steps_completed / 3) * 100
         
         # Display metrics
         col1, col2, col3 = st.columns(3)
@@ -103,65 +97,130 @@ def render():
             st.metric("Active Users", active_users)
         
         with col3:
-            st.metric("Completion Rate", f"{completion_rate}%")
+            st.metric("Completion Rate", f"{completion_rate:.0f}%")
         
-        # Show RIASEC results if available
-        if has_riasec_data:
-            st.markdown("### Current RIASEC Assessment Results")
+        # Show current session data if available
+        if has_assessment_data:
+            st.markdown("### Current Session Assessment Data")
+            st.info("Note: This shows data from the current active session. In production, this would aggregate data from all users.")
             
-            # Create two columns for better display
-            col1, col2 = st.columns(2)
+            # RIASEC Results
+            if st.session_state.get('riasec_scores'):
+                st.markdown("#### RIASEC Assessment Results")
+                
+                riasec_data = st.session_state.riasec_scores
+                
+                # Create two columns for better display
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("**RIASEC Scores:**")
+                    for riasec_type, score in riasec_data.items():
+                        # Show actual score value
+                        st.write(f"• **{riasec_type.capitalize()}**: {score:.1f}/5")
+                        # Progress bar
+                        st.progress(score / 5)
+                
+                with col2:
+                    # Show top 3 types
+                    sorted_types = sorted(riasec_data.items(), key=lambda x: x[1], reverse=True)
+                    st.markdown("**Top Interest Areas:**")
+                    for i, (riasec_type, score) in enumerate(sorted_types[:3], 1):
+                        if score > 0:  # Only show if there's a score
+                            st.write(f"{i}. **{riasec_type.capitalize()}**: {score:.1f}/5")
+                            # Add description
+                            descriptions = {
+                                'realistic': "Hands-on, practical activities",
+                                'investigative': "Research and analytical work",
+                                'artistic': "Creative and innovative tasks",
+                                'social': "Helping and teaching others",
+                                'enterprising': "Leadership and business",
+                                'conventional': "Organized, structured work"
+                            }
+                            st.caption(descriptions.get(riasec_type, ""))
             
-            with col1:
-                st.markdown("**RIASEC Scores:**")
-                for riasec_type, score in riasec_scores.items():
-                    st.metric(riasec_type.capitalize(), f"{score:.1f}/5")
-            
-            with col2:
-                # Show top 3 types
-                sorted_types = sorted(riasec_scores.items(), key=lambda x: x[1], reverse=True)
-                st.markdown("**Top Interest Areas:**")
-                for i, (riasec_type, score) in enumerate(sorted_types[:3], 1):
-                    st.write(f"{i}. {riasec_type.capitalize()}: {score:.1f}/5")
-            
-            # Show assessment completion status
-            st.markdown("### Assessment Progress")
+            # Assessment Progress Details
+            st.markdown("#### Assessment Progress Details")
             
             progress_data = {
-                "RIASEC Assessment": "✅ Complete" if has_riasec_data else "❌ Incomplete",
-                "Skills Assessment": "✅ Complete" if has_skills_data else "❌ Incomplete", 
-                "Values Assessment": "✅ Complete" if has_values_data else "❌ Incomplete"
+                "RIASEC Assessment": "✅ Complete" if any(score > 0 for score in st.session_state.get('riasec_scores', {}).values()) else "❌ Incomplete",
+                "Skills Assessment": "✅ Complete" if st.session_state.get('skills_confidence') else "❌ Incomplete", 
+                "Values Assessment": "✅ Complete" if st.session_state.get('work_values') else "❌ Incomplete"
             }
             
-            for assessment, status in progress_data.items():
-                st.write(f"**{assessment}:** {status}")
+            progress_col1, progress_col2, progress_col3 = st.columns(3)
             
-            # Show skills data if available
-            if has_skills_data:
-                st.markdown("### Skills Confidence Summary")
-                avg_confidence = sum(skills_confidence.values()) / len(skills_confidence) if skills_confidence else 0
-                st.metric("Average Skills Confidence", f"{avg_confidence:.1f}%")
+            with progress_col1:
+                st.metric("RIASEC", progress_data["RIASEC Assessment"])
+            
+            with progress_col2:
+                st.metric("Skills", progress_data["Skills Assessment"])
+            
+            with progress_col3:
+                st.metric("Values", progress_data["Values Assessment"])
+            
+            # Skills Summary
+            if st.session_state.get('skills_confidence'):
+                st.markdown("#### Skills Confidence Summary")
+                skills_data = st.session_state.skills_confidence
                 
-                # Show top 5 skills
-                if skills_confidence:
-                    top_skills = sorted(skills_confidence.items(), key=lambda x: x[1], reverse=True)[:5]
-                    st.markdown("**Top 5 Skills:**")
-                    for skill, confidence in top_skills:
-                        st.write(f"• {skill}: {confidence}%")
+                if skills_data:
+                    avg_confidence = sum(skills_data.values()) / len(skills_data)
+                    st.metric("Average Skills Confidence", f"{avg_confidence:.1f}%")
+                    
+                    # Show top 5 skills
+                    top_skills = sorted(skills_data.items(), key=lambda x: x[1], reverse=True)[:5]
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**Top 5 Skills:**")
+                        for skill, confidence in top_skills:
+                            st.write(f"• {skill}: {confidence}%")
+                            st.progress(confidence / 100)
+                    
+                    with col2:
+                        # Skills by category
+                        st.markdown("**Skills Count by Category:**")
+                        # This is a simplified categorization
+                        technical_count = sum(1 for skill in skills_data.keys() if any(word in skill.lower() for word in ['technical', 'computer', 'data']))
+                        soft_count = sum(1 for skill in skills_data.keys() if any(word in skill.lower() for word in ['communication', 'leadership', 'team']))
+                        other_count = len(skills_data) - technical_count - soft_count
+                        
+                        st.write(f"• Technical Skills: {technical_count}")
+                        st.write(f"• Soft Skills: {soft_count}")
+                        st.write(f"• Other Skills: {other_count}")
             
-            # Show work values if available
-            if has_values_data:
-                st.markdown("### Work Values")
+            # Work Values
+            if st.session_state.get('work_values'):
+                st.markdown("#### Work Values")
+                values = st.session_state.work_values
                 st.write("**Selected Values:**")
-                for value in work_values:
-                    st.write(f"• {value}")
+                
+                values_cols = st.columns(2)
+                for i, value in enumerate(values):
+                    with values_cols[i % 2]:
+                        st.write(f"• {value}")
+            
+            # User Information
+            if st.session_state.get('user_name') or st.session_state.get('user_email'):
+                st.markdown("#### User Information")
+                if st.session_state.get('user_name'):
+                    st.write(f"**Name:** {st.session_state.user_name}")
+                if st.session_state.get('user_email'):
+                    st.write(f"**Email:** {st.session_state.user_email}")
+                if st.session_state.get('selected_persona'):
+                    st.write(f"**Persona:** {st.session_state.selected_persona.capitalize()}")
         else:
             st.info("No assessment data available yet. Complete an assessment to see analytics.")
+            st.markdown("""
+            To see analytics data:
+            1. Log out from the admin panel
+            2. Complete an assessment as an individual
+            3. Return to the admin panel to view the results
             
-            # Show current RIASEC scores for debugging
-            if riasec_scores:
-                st.markdown("### Debug: Current RIASEC Scores")
-                st.json(riasec_scores)
+            Note: In a production environment, this would show aggregated data from all users.
+            """)
     
     with tab4:
         st.subheader("📁 File Upload System")

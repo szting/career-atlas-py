@@ -73,7 +73,7 @@ st.markdown("""
 
 # Check authentication first - this will show password page if not authenticated
 if not check_simple_password():
-    st.stop()
+    st.stop()  # This stops execution here if not authenticated
 
 # Only show the main app if authenticated
 # Sidebar navigation
@@ -132,10 +132,6 @@ with st.sidebar:
     # Logout button
     if st.button("🚪 Logout"):
         logout()
-        # Clear all session state except authentication
-        for key in list(st.session_state.keys()):
-            if key not in ['authenticated', 'auth_time']:
-                del st.session_state[key]
         st.rerun()
 
 # Main content routing
