@@ -3,7 +3,7 @@ from streamlit_option_menu import option_menu
 import os
 from dotenv import load_dotenv
 from utils.session_state import init_session_state
-from utils.auth import check_password
+from utils.auth import check_password, is_session_valid, refresh_session
 from pages import (
     persona_selection,
     welcome,
@@ -71,15 +71,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Check authentication FIRST - before any other content
-if not st.session_state.authenticated:
+# Check authentication and session validity
+if not st.session_state.authenticated or not is_session_valid():
     if not check_password():
         st.stop()
+else:
+    # Refresh session on activity
+    refresh_session()
 
 # Only show the main app if authenticated
 # Sidebar navigation
 with st.sidebar:
     st.title("🎯 Career Assessment")
+    
+    # Show session info
+    if st.session_state.get("auth_time"):
+        st.caption(f"Session active")
     
     # Show progress if assessment started
     if st.session_state.current_step not in ['persona', 'welcome']:
@@ -128,9 +135,9 @@ with st.sidebar:
     
     # Logout button
     if st.button("🚪 Logout"):
-        st.session_state.authenticated = False
-        st.session_state.current_step = 'persona'
-        st.session_state.selected_persona = None
+        # Clear all session state
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.rerun()
 
 # Main content routing

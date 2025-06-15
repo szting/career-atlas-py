@@ -1,5 +1,6 @@
 import streamlit as st
 from typing import Dict, List
+from datetime import datetime
 
 def init_session_state():
     """Initialize all session state variables"""
@@ -7,6 +8,15 @@ def init_session_state():
     # Authentication
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
+    
+    if 'auth_time' not in st.session_state:
+        st.session_state.auth_time = None
+    
+    if 'login_attempts' not in st.session_state:
+        st.session_state.login_attempts = 0
+    
+    if 'last_attempt_time' not in st.session_state:
+        st.session_state.last_attempt_time = None
     
     # API Keys - Initialize with empty string if not set
     if 'api_keys' not in st.session_state:
