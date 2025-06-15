@@ -83,7 +83,12 @@ def render_skills_analysis():
     """Render skills confidence vs RIASEC interests spider diagram"""
     st.subheader("Skills Confidence vs Career Interests Analysis")
     
-    # Comprehensive skill to RIASEC mapping
+    # Check if we have the necessary data
+    if not st.session_state.get('riasec_scores') or not st.session_state.get('skills_confidence'):
+        st.warning("Please complete the assessment first to view your skills analysis.")
+        return
+    
+    # Comprehensive skill to RIASEC mapping with fallback for unmapped skills
     skill_to_riasec = {
         # Realistic
         'Technical Skills': 'realistic',
@@ -125,25 +130,49 @@ def render_skills_analysis():
         'Attention to Detail': 'conventional',
         'Administrative Skills': 'conventional',
         'Record Keeping': 'conventional',
-        'Process Management': 'conventional'
+        'Process Management': 'conventional',
+        
+        # Additional common skills
+        'Time Management': 'conventional',
+        'Project Management': 'enterprising',
+        'Public Speaking': 'social',
+        'Adaptability': 'investigative',
+        'Writing': 'artistic'
     }
     
     # Calculate average skill confidence per RIASEC type
     riasec_skill_confidence = {r: [] for r in st.session_state.riasec_scores.keys()}
+    unmapped_skills = []
     
     for skill, confidence in st.session_state.skills_confidence.items():
         if skill in skill_to_riasec:
             riasec_type = skill_to_riasec[skill]
             riasec_skill_confidence[riasec_type].append(confidence)
+        else:
+            unmapped_skills.append(skill)
+            # Attempt to map based on keywords
+            skill_lower = skill.lower()
+            if any(word in skill_lower for word in ['tech', 'computer', 'build', 'fix']):
+                riasec_skill_confidence['realistic'].append(confidence)
+            elif any(word in skill_lower for word in ['analyz', 'research', 'data', 'think']):
+                riasec_skill_confidence['investigative'].append(confidence)
+            elif any(word in skill_lower for word in ['creat', 'design', 'art', 'innovat']):
+                riasec_skill_confidence['artistic'].append(confidence)
+            elif any(word in skill_lower for word in ['help', 'teach', 'commun', 'team']):
+                riasec_skill_confidence['social'].append(confidence)
+            elif any(word in skill_lower for word in ['lead', 'manag', 'business', 'sell']):
+                riasec_skill_confidence['enterprising'].append(confidence)
+            elif any(word in skill_lower for word in ['organiz', 'detail', 'admin', 'process']):
+                riasec_skill_confidence['conventional'].append(confidence)
     
-    # Calculate averages with proper handling of empty lists
+    # Calculate averages with proper handling
     avg_skill_confidence = {}
     for riasec_type, confidences in riasec_skill_confidence.items():
         if confidences:
             avg_skill_confidence[riasec_type] = sum(confidences) / len(confidences)
         else:
-            # If no skills mapped to this type, use a neutral value
-            avg_skill_confidence[riasec_type] = 50
+            # Use the RIASEC interest score as a baseline if no skills mapped
+            avg_skill_confidence[riasec_type] = st.session_state.riasec_scores[riasec_type] * 20
     
     # Create combined spider diagram
     categories = [cat.capitalize() for cat in st.session_state.riasec_scores.keys()]
@@ -181,7 +210,9 @@ def render_skills_analysis():
                 range=[0, 100],
                 tickmode='linear',
                 tick0=0,
-                dtick=20
+                dtick=20,
+                ticktext=['0%', '20%', '40%', '60%', '80%', '100%'],
+                tickvals=[0, 20, 40, 60, 80, 100]
             )),
         showlegend=True,
         height=500,
@@ -195,6 +226,16 @@ def render_skills_analysis():
     )
     
     st.plotly_chart(fig, use_container_width=True)
+    
+    # Show data table for transparency
+    with st.expander("View Detailed Scores"):
+        data = {
+            'RIASEC Type': categories,
+            'Career Interest (%)': [f"{v:.0f}%" for v in riasec_values],
+            'Skills Confidence (%)': [f"{v:.0f}%" for v in skill_values],
+            'Gap': [f"{abs(r-s):.0f}%" for r, s in zip(riasec_values, skill_values)]
+        }
+        st.dataframe(pd.DataFrame(data))
     
     # Analysis insights
     st.markdown("### Key Insights:")
@@ -232,18 +273,33 @@ def render_skills_analysis():
     
     # Top skills breakdown
     st.markdown("### Your Top Skills:")
-    top_skills = sorted(st.session_state.skills_confidence.items(), key=lambda x: x[1], reverse=True)[:5]
+    if st.session_state.skills_confidence:
+        top_skills = sorted(st.session_state.skills_confidence.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        for skill, confidence in top_skills:
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.progress(confidence/100)
+            with col2:
+                st.caption(f"{skill}: {confidence}%")
+    else:
+        st.info("No skills data available. Please complete the skills assessment.")
     
-    for skill, confidence in top_skills:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.progress(confidence/100)
-        with col2:
-            st.caption(f"{skill}: {confidence}%")
+    # Show unmapped skills if any
+    if unmapped_skills:
+        with st.expander("Skills with automatic categorization"):
+            st.caption("These skills were automatically categorized based on keywords:")
+            for skill in unmapped_skills:
+                st.write(f"- {skill}")
 
 def render_career_matches():
     """Render career recommendations"""
     st.subheader("🎯 Recommended Career Paths")
+    
+    # Check if assessment is complete
+    if not st.session_state.get('riasec_scores') or not st.session_state.get('skills_confidence'):
+        st.warning("Please complete the assessment first to view career recommendations.")
+        return
     
     # Get AI-generated career recommendations if available
     openai_service = OpenAIService()
@@ -334,6 +390,11 @@ def render_development_plan():
     """Render personalized development plan"""
     st.subheader("📚 Your Personalized Development Plan")
     
+    # Check if assessment is complete
+    if not st.session_state.get('riasec_scores') or not st.session_state.get('skills_confidence'):
+        st.warning("Please complete the assessment first to view your development plan.")
+        return
+    
     # Get AI-generated recommendations if API key is available
     openai_service = OpenAIService()
     
@@ -410,13 +471,17 @@ def render_development_plan():
     
     values_col1, values_col2 = st.columns(2)
     
-    with values_col1:
-        for i, value in enumerate(st.session_state.work_values[:3]):
-            st.markdown(f"{i+1}. **{value}**")
-    
-    with values_col2:
-        for i, value in enumerate(st.session_state.work_values[3:6], 4):
-            st.markdown(f"{i}. **{value}**")
+    work_values = st.session_state.get('work_values', [])
+    if work_values:
+        with values_col1:
+            for i, value in enumerate(work_values[:3]):
+                st.markdown(f"{i+1}. **{value}**")
+        
+        with values_col2:
+            for i, value in enumerate(work_values[3:6], 4):
+                st.markdown(f"{i}. **{value}**")
+    else:
+        st.info("Complete the work values assessment to see your priorities.")
     
     # Action steps with timeline
     st.markdown("### Development Timeline")
