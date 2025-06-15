@@ -5,18 +5,12 @@ from datetime import datetime
 def init_session_state():
     """Initialize all session state variables"""
     
-    # Authentication
+    # Authentication - Simple approach
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
     
     if 'auth_time' not in st.session_state:
         st.session_state.auth_time = None
-    
-    if 'login_attempts' not in st.session_state:
-        st.session_state.login_attempts = 0
-    
-    if 'last_attempt_time' not in st.session_state:
-        st.session_state.last_attempt_time = None
     
     # API Keys - Initialize with empty string if not set
     if 'api_keys' not in st.session_state:
@@ -38,7 +32,7 @@ def init_session_state():
     if 'selected_persona' not in st.session_state:
         st.session_state.selected_persona = None
     
-    # Assessment data
+    # Assessment data - Initialize with proper structure
     if 'riasec_scores' not in st.session_state:
         st.session_state.riasec_scores = {
             'realistic': 0,

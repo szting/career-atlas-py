@@ -3,7 +3,7 @@ from streamlit_option_menu import option_menu
 import os
 from dotenv import load_dotenv
 from utils.session_state import init_session_state
-from utils.auth import check_password, is_session_valid, refresh_session
+from utils.simple_auth import check_simple_password, logout
 from pages import (
     persona_selection,
     welcome,
@@ -71,13 +71,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Check authentication and session validity
-if not st.session_state.authenticated or not is_session_valid():
-    if not check_password():
-        st.stop()
-else:
-    # Refresh session on activity
-    refresh_session()
+# Check authentication first - this will show password page if not authenticated
+if not check_simple_password():
+    st.stop()
 
 # Only show the main app if authenticated
 # Sidebar navigation
@@ -135,9 +131,11 @@ with st.sidebar:
     
     # Logout button
     if st.button("🚪 Logout"):
-        # Clear all session state
+        logout()
+        # Clear all session state except authentication
         for key in list(st.session_state.keys()):
-            del st.session_state[key]
+            if key not in ['authenticated', 'auth_time']:
+                del st.session_state[key]
         st.rerun()
 
 # Main content routing
