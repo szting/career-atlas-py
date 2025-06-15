@@ -33,7 +33,7 @@ def check_simple_password():
             submitted = st.form_submit_button("Login", use_container_width=True)
             
             if submitted:
-                if password == "Cl@r1tyC2r3r":
+                if password == "Cl@r1tyC2r33r":  # Fixed typo in password
                     st.session_state.authenticated = True
                     st.session_state.auth_time = datetime.now()
                     st.success("✅ Login successful!")
