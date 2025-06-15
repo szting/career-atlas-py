@@ -1,9 +1,8 @@
 import streamlit as st
-from utils.session_state import init_session_state
 
 def render():
     st.title("🎯 Career Assessment Tool")
-    st.subheader("Choose Your Role")
+    st.subheader("Select Your Role")
     
     col1, col2, col3 = st.columns(3)
     
@@ -11,10 +10,10 @@ def render():
         st.markdown("""
         <div class="assessment-card">
             <h3>👤 Individual</h3>
-            <p>Take the career assessment to discover your ideal career path based on your interests, skills, and values.</p>
+            <p>Take the career assessment to discover your ideal career path</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Start as Individual", key="individual_btn"):
+        if st.button("I'm an Individual", key="individual_btn", use_container_width=True):
             st.session_state.selected_persona = 'individual'
             st.session_state.current_step = 'welcome'
             st.rerun()
@@ -23,22 +22,22 @@ def render():
         st.markdown("""
         <div class="assessment-card">
             <h3>🎓 Career Coach</h3>
-            <p>Access coaching tools and resources to guide individuals through their career development journey.</p>
+            <p>Access coaching tools and client assessments</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Start as Coach", key="coach_btn"):
+        if st.button("I'm a Coach", key="coach_btn", use_container_width=True):
             st.session_state.selected_persona = 'coach'
-            st.session_state.current_step = 'coaching'
+            st.session_state.current_step = 'coach_dashboard'
             st.rerun()
     
     with col3:
         st.markdown("""
         <div class="assessment-card">
             <h3>👔 Manager</h3>
-            <p>Use team insights and reflection tools to support your team members' career growth and development.</p>
+            <p>View team assessments and development insights</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Start as Manager", key="manager_btn"):
+        if st.button("I'm a Manager", key="manager_btn", use_container_width=True):
             st.session_state.selected_persona = 'manager'
-            st.session_state.current_step = 'reflection'
+            st.session_state.current_step = 'manager_dashboard'
             st.rerun()

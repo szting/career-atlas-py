@@ -3,6 +3,7 @@ from streamlit_option_menu import option_menu
 import os
 from dotenv import load_dotenv
 from utils.session_state import init_session_state
+from utils.auth import check_password
 from pages import (
     persona_selection,
     welcome,
@@ -70,6 +71,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Check authentication
+if not st.session_state.authenticated:
+    if not check_password():
+        st.stop()
+
 # Sidebar navigation
 with st.sidebar:
     st.title("🎯 Career Assessment")
@@ -118,6 +124,13 @@ with st.sidebar:
     st.divider()
     if st.button("🔐 Admin Access"):
         st.session_state.show_admin = True
+    
+    # Logout button
+    if st.button("🚪 Logout"):
+        st.session_state.authenticated = False
+        st.session_state.current_step = 'persona'
+        st.session_state.selected_persona = None
+        st.rerun()
 
 # Main content routing
 if st.session_state.show_admin:
