@@ -3,22 +3,30 @@ import json
 from typing import Dict, List, Tuple, Optional
 import streamlit as st
 
+# Import OpenAI at module level
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    st.warning("OpenAI library not installed. Using fallback responses.")
+
 class OpenAIService:
     def __init__(self):
         # Try to get API key from session state first, then environment
-        self.api_key = st.session_state.api_keys.get('openai', '') or os.getenv('OPENAI_API_KEY', '')
+        self.api_key = st.session_state.get('api_keys', {}).get('openai', '') or os.getenv('OPENAI_API_KEY', '')
         self.model = "gpt-4o-mini"
         self._client = None
+        
+        # Check if API key is available
+        if not self.api_key:
+            st.info("OpenAI API key not configured. Using fallback responses.")
     
     def _get_client(self):
         """Lazy load OpenAI client"""
-        if self._client is None and self.api_key:
+        if self._client is None and self.api_key and OPENAI_AVAILABLE:
             try:
-                import openai
                 self._client = openai.OpenAI(api_key=self.api_key)
-            except ImportError:
-                st.warning("OpenAI library not installed. Using fallback responses.")
-                return None
             except Exception as e:
                 st.warning(f"Error initializing OpenAI client: {str(e)}")
                 return None
@@ -27,6 +35,10 @@ class OpenAIService:
     def _make_request(self, messages: List[Dict], max_tokens: int = 1000) -> str:
         """Make request to OpenAI API with fallback"""
         try:
+            # Check if API key exists
+            if not self.api_key:
+                return self._generate_fallback_response(messages)
+            
             client = self._get_client()
             if not client:
                 return self._generate_fallback_response(messages)
@@ -85,8 +97,17 @@ Work Values:
             prompt += f"""
 
 Additional Context from Uploaded Frameworks:
-{chr(10).join([f"- {name}: {', '.join(data.get('skills', [])[:5])}" for name, data in uploaded_frameworks.items()])}
 """
+            for framework_name, framework_data in uploaded_frameworks.items():
+                if isinstance(framework_data, dict):
+                    skills = framework_data.get('skills', [])
+                    if skills:
+                        prompt += f"- {framework_name}: {', '.join(skills[:5])}\n"
+                    
+                    # Add any additional framework details
+                    if 'categories' in framework_data:
+                        for category, items in framework_data['categories'].items():
+                            prompt += f"  - {category}: {', '.join(items[:3])}\n"
         
         prompt += """
 
@@ -127,7 +148,7 @@ Focus on careers that:
             for line in lines[1:]:
                 if line.startswith('MATCH:'):
                     try:
-                        recommendation['match_score'] = int(line.replace('MATCH:', '').strip())
+                        recommendation['match_score'] = int(line.replace('MATCH:', '').strip().replace('%', ''))
                     except:
                         pass
                 elif line.startswith('DESCRIPTION:'):
@@ -162,6 +183,14 @@ Focus on careers that:
                 'activities': ['Conducting user interviews', 'Analyzing usage data', 'Creating personas', 'Testing prototypes'],
                 'skills_to_develop': ['Research methodologies', 'Data analysis', 'Communication skills'],
                 'next_steps': ['Learn UX research methods', 'Practice user interviews', 'Study human-computer interaction', 'Join UX communities']
+            },
+            {
+                'title': 'Project Manager',
+                'match_score': 78,
+                'description': 'Lead cross-functional teams to deliver projects on time and within budget. Combines organizational skills with people management.',
+                'activities': ['Planning project timelines', 'Coordinating team members', 'Managing budgets', 'Reporting progress'],
+                'skills_to_develop': ['Agile methodologies', 'Risk management', 'Stakeholder communication'],
+                'next_steps': ['Get PMP certification', 'Learn project management software', 'Practice leadership skills', 'Build project portfolio']
             }
         ]
     
@@ -169,13 +198,13 @@ Focus on careers that:
         """Generate fallback responses when API is unavailable"""
         user_message = messages[-1]['content'] if messages else ''
         
-        if 'coaching questions' in user_message:
+        if 'coaching questions' in user_message.lower():
             return self._generate_fallback_coaching_questions()
-        elif 'reflection questions' in user_message:
+        elif 'reflection questions' in user_message.lower():
             return self._generate_fallback_reflection_questions()
-        elif 'career recommendations' in user_message:
+        elif 'career recommendations' in user_message.lower():
             return self._generate_fallback_career_recommendations_text()
-        elif 'development plan' in user_message:
+        elif 'development plan' in user_message.lower():
             return self._generate_fallback_development_plan()
         
         return "Unable to generate AI response. Please check your API configuration."
@@ -299,8 +328,8 @@ Generate 8-10 personalized coaching questions for an individual with the followi
 RIASEC Scores:
 {chr(10).join([f"- {type_name.capitalize()}: {score}%" for type_name, score in top_types])}
 
-Top Skills (confidence level 1-5):
-{chr(10).join([f"- {skill}: {conf}/5" for skill, conf in sorted(user_profile['skills_confidence'].items(), key=lambda x: x[1], reverse=True)[:5]])}
+Top Skills (confidence level 1-100):
+{chr(10).join([f"- {skill}: {conf}%" for skill, conf in sorted(user_profile['skills_confidence'].items(), key=lambda x: x[1], reverse=True)[:5]])}
 
 Work Values:
 {chr(10).join([f"- {value}" for value in user_profile['work_values'][:5]])}
@@ -326,7 +355,7 @@ RIASEC Scores:
 {chr(10).join([f"- {type_name.capitalize()}: {score}%" for type_name, score in top_types])}
 
 Top Skills:
-{chr(10).join([f"- {skill}: {conf}/5" for skill, conf in sorted(user_profile['skills_confidence'].items(), key=lambda x: x[1], reverse=True)[:5]])}
+{chr(10).join([f"- {skill}: {conf}%" for skill, conf in sorted(user_profile['skills_confidence'].items(), key=lambda x: x[1], reverse=True)[:5]])}
 
 Work Values:
 {chr(10).join([f"- {value}" for value in user_profile['work_values'][:5]])}
