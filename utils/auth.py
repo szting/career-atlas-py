@@ -9,9 +9,14 @@ def check_password():
     
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == os.getenv("APP_PASSWORD", "career123"):
+        entered_password = st.session_state.get("password", "")
+        correct_password = os.getenv("APP_PASSWORD", "career123")
+        
+        if entered_password == correct_password:
             st.session_state["authenticated"] = True
-            del st.session_state["password"]  # Don't store password
+            # Clear the password from session state
+            if "password" in st.session_state:
+                del st.session_state["password"]
         else:
             st.session_state["authenticated"] = False
 
@@ -30,16 +35,27 @@ def check_password():
             type="password", 
             on_change=password_entered, 
             key="password",
-            placeholder="Enter password"
+            placeholder="Enter password",
+            help="Contact your administrator for the password"
         )
         
-        if st.session_state.get("authenticated", False) == False:
-            st.error("😕 Incorrect password")
+        # Show error if authentication failed
+        if "password" in st.session_state and not st.session_state.get("authenticated", False):
+            st.error("😕 Incorrect password. Please try again.")
+        
+        # Security note - remove in production
+        with st.expander("Demo Credentials"):
+            st.info("""
+            **For testing purposes only:**
+            - App Password: career123
+            - Admin Password: admin123
             
-        st.info("💡 Default password: career123")
+            ⚠️ Change these passwords before deploying to production!
+            """)
     
     return False
 
 def check_admin_password(password: str) -> bool:
     """Check if admin password is correct"""
-    return password == os.getenv("ADMIN_PASSWORD", "admin123")
+    admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+    return password == admin_password

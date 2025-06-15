@@ -19,7 +19,7 @@ from pages import (
 # Load environment variables
 load_dotenv()
 
-# Page configuration
+# Page configuration - MUST be first Streamlit command
 st.set_page_config(
     page_title="Career Assessment Tool",
     page_icon="🎯",
@@ -71,11 +71,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Check authentication
+# Check authentication FIRST - before any other content
 if not st.session_state.authenticated:
     if not check_password():
         st.stop()
 
+# Only show the main app if authenticated
 # Sidebar navigation
 with st.sidebar:
     st.title("🎯 Career Assessment")

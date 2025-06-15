@@ -138,6 +138,3 @@ def render_coach_view():
                         st.info("Client details view coming soon!")
     
     with tab2:
-        st.subheader("Assessment Administration")
-        
-        # Quick

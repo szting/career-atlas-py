@@ -1,21 +1,35 @@
 import os
 import json
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import streamlit as st
 
 class OpenAIService:
     def __init__(self):
-        self.api_key = st.session_state.api_keys.get('openai', '')
+        # Try to get API key from session state first, then environment
+        self.api_key = st.session_state.api_keys.get('openai', '') or os.getenv('OPENAI_API_KEY', '')
         self.model = "gpt-4o-mini"
+        self._client = None
+    
+    def _get_client(self):
+        """Lazy load OpenAI client"""
+        if self._client is None and self.api_key:
+            try:
+                import openai
+                self._client = openai.OpenAI(api_key=self.api_key)
+            except ImportError:
+                st.warning("OpenAI library not installed. Using fallback responses.")
+                return None
+            except Exception as e:
+                st.warning(f"Error initializing OpenAI client: {str(e)}")
+                return None
+        return self._client
     
     def _make_request(self, messages: List[Dict], max_tokens: int = 1000) -> str:
         """Make request to OpenAI API with fallback"""
         try:
-            if not self.api_key:
+            client = self._get_client()
+            if not client:
                 return self._generate_fallback_response(messages)
-            
-            import openai
-            client = openai.OpenAI(api_key=self.api_key)
             
             response = client.chat.completions.create(
                 model=self.model,
@@ -29,6 +43,128 @@ class OpenAIService:
             st.warning(f"OpenAI API error: {str(e)}. Using fallback responses.")
             return self._generate_fallback_response(messages)
     
+    def generate_career_recommendations(self, user_profile: Dict, uploaded_frameworks: Dict = None) -> List[Dict]:
+        """Generate career recommendations based on profile and uploaded frameworks"""
+        from utils.career_matcher import get_top_riasec_types
+        
+        top_types = get_top_riasec_types(user_profile['riasec_scores'])
+        
+        # Build prompt including uploaded frameworks if available
+        prompt = self._build_career_recommendations_prompt(user_profile, top_types, uploaded_frameworks)
+        
+        messages = [
+            {
+                'role': 'system',
+                'content': 'You are an expert career counselor specializing in RIASEC assessments and skills-based career matching.'
+            },
+            {
+                'role': 'user',
+                'content': prompt
+            }
+        ]
+        
+        response = self._make_request(messages, 2000)
+        return self._parse_career_recommendations(response)
+    
+    def _build_career_recommendations_prompt(self, user_profile: Dict, top_types: List[Tuple], uploaded_frameworks: Dict = None) -> str:
+        prompt = f"""
+Generate 5-7 personalized career recommendations based on this profile:
+
+RIASEC Profile:
+{chr(10).join([f"- {type_name.capitalize()}: {score}%" for type_name, score in top_types])}
+
+Top Skills (confidence 1-100):
+{chr(10).join([f"- {skill}: {conf}%" for skill, conf in sorted(user_profile['skills_confidence'].items(), key=lambda x: x[1], reverse=True)[:10]])}
+
+Work Values:
+{chr(10).join([f"- {value}" for value in user_profile['work_values'][:5]])}
+"""
+        
+        # Add uploaded frameworks context if available
+        if uploaded_frameworks:
+            prompt += f"""
+
+Additional Context from Uploaded Frameworks:
+{chr(10).join([f"- {name}: {', '.join(data.get('skills', [])[:5])}" for name, data in uploaded_frameworks.items()])}
+"""
+        
+        prompt += """
+
+For each career recommendation, provide:
+TITLE: [Career title]
+MATCH: [Match percentage 0-100]
+DESCRIPTION: [2-3 sentence description]
+ACTIVITIES: [4-5 key daily activities separated by |]
+DEVELOPMENT: [3-4 skills to develop separated by |]
+NEXT_STEPS: [4 concrete next steps separated by |]
+
+Focus on careers that:
+1. Align with their top RIASEC types
+2. Leverage their strongest skills
+3. Match their work values
+4. Consider any uploaded skill frameworks
+"""
+        return prompt
+    
+    def _parse_career_recommendations(self, response: str) -> List[Dict]:
+        """Parse career recommendations from response"""
+        recommendations = []
+        sections = response.split('TITLE:')[1:] if 'TITLE:' in response else []
+        
+        for section in sections:
+            lines = section.strip().split('\n')
+            title = lines[0].strip()
+            
+            recommendation = {
+                'title': title,
+                'match_score': 75,  # Default
+                'description': '',
+                'activities': [],
+                'skills_to_develop': [],
+                'next_steps': []
+            }
+            
+            for line in lines[1:]:
+                if line.startswith('MATCH:'):
+                    try:
+                        recommendation['match_score'] = int(line.replace('MATCH:', '').strip())
+                    except:
+                        pass
+                elif line.startswith('DESCRIPTION:'):
+                    recommendation['description'] = line.replace('DESCRIPTION:', '').strip()
+                elif line.startswith('ACTIVITIES:'):
+                    recommendation['activities'] = [a.strip() for a in line.replace('ACTIVITIES:', '').split('|')]
+                elif line.startswith('DEVELOPMENT:'):
+                    recommendation['skills_to_develop'] = [s.strip() for s in line.replace('DEVELOPMENT:', '').split('|')]
+                elif line.startswith('NEXT_STEPS:'):
+                    recommendation['next_steps'] = [s.strip() for s in line.replace('NEXT_STEPS:', '').split('|')]
+            
+            if recommendation['title'] and recommendation['description']:
+                recommendations.append(recommendation)
+        
+        return recommendations if recommendations else self._get_fallback_career_recommendations()
+    
+    def _get_fallback_career_recommendations(self) -> List[Dict]:
+        """Return fallback career recommendations"""
+        return [
+            {
+                'title': 'Data Analyst',
+                'match_score': 85,
+                'description': 'Analyze complex datasets to help organizations make data-driven decisions. Combines investigative thinking with practical problem-solving.',
+                'activities': ['Analyzing data patterns', 'Creating visualizations', 'Writing reports', 'Presenting findings'],
+                'skills_to_develop': ['Statistical analysis', 'Data visualization tools', 'Business acumen'],
+                'next_steps': ['Learn SQL and Python', 'Take statistics course', 'Build portfolio projects', 'Network with data professionals']
+            },
+            {
+                'title': 'UX Researcher',
+                'match_score': 80,
+                'description': 'Study user behavior and preferences to improve product design. Blends investigative research with creative problem-solving.',
+                'activities': ['Conducting user interviews', 'Analyzing usage data', 'Creating personas', 'Testing prototypes'],
+                'skills_to_develop': ['Research methodologies', 'Data analysis', 'Communication skills'],
+                'next_steps': ['Learn UX research methods', 'Practice user interviews', 'Study human-computer interaction', 'Join UX communities']
+            }
+        ]
+    
     def _generate_fallback_response(self, messages: List[Dict]) -> str:
         """Generate fallback responses when API is unavailable"""
         user_message = messages[-1]['content'] if messages else ''
@@ -38,11 +174,33 @@ class OpenAIService:
         elif 'reflection questions' in user_message:
             return self._generate_fallback_reflection_questions()
         elif 'career recommendations' in user_message:
-            return self._generate_fallback_career_recommendations()
+            return self._generate_fallback_career_recommendations_text()
         elif 'development plan' in user_message:
             return self._generate_fallback_development_plan()
         
         return "Unable to generate AI response. Please check your API configuration."
+    
+    def _generate_fallback_career_recommendations_text(self) -> str:
+        return """TITLE: Data Analyst
+MATCH: 85
+DESCRIPTION: Analyze complex datasets to help organizations make data-driven decisions. Combines investigative thinking with practical problem-solving.
+ACTIVITIES: Analyzing data patterns | Creating visualizations | Writing reports | Presenting findings
+DEVELOPMENT: Statistical analysis | Data visualization tools | Business acumen
+NEXT_STEPS: Learn SQL and Python | Take statistics course | Build portfolio projects | Network with data professionals
+
+TITLE: UX Researcher
+MATCH: 80
+DESCRIPTION: Study user behavior and preferences to improve product design. Blends investigative research with creative problem-solving.
+ACTIVITIES: Conducting user interviews | Analyzing usage data | Creating personas | Testing prototypes
+DEVELOPMENT: Research methodologies | Data analysis | Communication skills
+NEXT_STEPS: Learn UX research methods | Practice user interviews | Study human-computer interaction | Join UX communities
+
+TITLE: Project Manager
+MATCH: 78
+DESCRIPTION: Lead cross-functional teams to deliver projects on time and within budget. Combines organizational skills with people management.
+ACTIVITIES: Planning project timelines | Coordinating team members | Managing budgets | Reporting progress
+DEVELOPMENT: Agile methodologies | Risk management | Stakeholder communication
+NEXT_STEPS: Get PMP certification | Learn project management software | Practice leadership skills | Build project portfolio"""
     
     def _generate_fallback_coaching_questions(self) -> str:
         return """QUESTION: What aspects of your current role align most closely with your top RIASEC types?
@@ -77,21 +235,6 @@ GUIDANCE: Look for patterns that connect to their RIASEC types and use these ins
 QUESTION: Where do you see the greatest potential for this person's career growth based on their profile?
 CONTEXT: career_planning
 GUIDANCE: Consider both vertical and lateral moves that would align with their dominant RIASEC types while building on existing skills."""
-    
-    def _generate_fallback_career_recommendations(self) -> str:
-        return """TITLE: Data Analyst
-MATCH: 85
-DESCRIPTION: Analyze complex datasets to help organizations make data-driven decisions. Combines investigative thinking with practical problem-solving.
-ACTIVITIES: Analyzing data patterns | Creating visualizations | Writing reports | Presenting findings
-DEVELOPMENT: Statistical analysis | Data visualization tools | Business acumen
-NEXT_STEPS: Learn SQL and Python | Take statistics course | Build portfolio projects | Network with data professionals
-
-TITLE: UX Researcher
-MATCH: 80
-DESCRIPTION: Study user behavior and preferences to improve product design. Blends investigative research with creative problem-solving.
-ACTIVITIES: Conducting user interviews | Analyzing usage data | Creating personas | Testing prototypes
-DEVELOPMENT: Research methodologies | Data analysis | Communication skills
-NEXT_STEPS: Learn UX research methods | Practice user interviews | Study human-computer interaction | Join UX communities"""
     
     def _generate_fallback_development_plan(self) -> str:
         return """SHORT_TERM_GOALS (3-6 months):

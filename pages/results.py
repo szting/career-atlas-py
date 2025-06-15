@@ -83,20 +83,49 @@ def render_skills_analysis():
     """Render skills confidence vs RIASEC interests spider diagram"""
     st.subheader("Skills Confidence vs Career Interests Analysis")
     
-    # Map skills to RIASEC categories
+    # Comprehensive skill to RIASEC mapping
     skill_to_riasec = {
-        'Problem Solving': 'investigative',
+        # Realistic
         'Technical Skills': 'realistic',
-        'Communication': 'social',
-        'Leadership': 'enterprising',
-        'Creativity': 'artistic',
-        'Organization': 'conventional',
-        'Analytical Thinking': 'investigative',
-        'Teamwork': 'social',
-        'Attention to Detail': 'conventional',
-        'Strategic Planning': 'enterprising',
         'Hands-on Work': 'realistic',
-        'Innovation': 'artistic'
+        'Mechanical Aptitude': 'realistic',
+        'Physical Coordination': 'realistic',
+        'Tool Usage': 'realistic',
+        
+        # Investigative
+        'Problem Solving': 'investigative',
+        'Analytical Thinking': 'investigative',
+        'Research': 'investigative',
+        'Data Analysis': 'investigative',
+        'Critical Thinking': 'investigative',
+        
+        # Artistic
+        'Creativity': 'artistic',
+        'Innovation': 'artistic',
+        'Design Thinking': 'artistic',
+        'Artistic Expression': 'artistic',
+        'Imagination': 'artistic',
+        
+        # Social
+        'Communication': 'social',
+        'Teamwork': 'social',
+        'Teaching': 'social',
+        'Empathy': 'social',
+        'Interpersonal Skills': 'social',
+        
+        # Enterprising
+        'Leadership': 'enterprising',
+        'Strategic Planning': 'enterprising',
+        'Negotiation': 'enterprising',
+        'Sales': 'enterprising',
+        'Persuasion': 'enterprising',
+        
+        # Conventional
+        'Organization': 'conventional',
+        'Attention to Detail': 'conventional',
+        'Administrative Skills': 'conventional',
+        'Record Keeping': 'conventional',
+        'Process Management': 'conventional'
     }
     
     # Calculate average skill confidence per RIASEC type
@@ -107,13 +136,14 @@ def render_skills_analysis():
             riasec_type = skill_to_riasec[skill]
             riasec_skill_confidence[riasec_type].append(confidence)
     
-    # Calculate averages
+    # Calculate averages with proper handling of empty lists
     avg_skill_confidence = {}
     for riasec_type, confidences in riasec_skill_confidence.items():
         if confidences:
             avg_skill_confidence[riasec_type] = sum(confidences) / len(confidences)
         else:
-            avg_skill_confidence[riasec_type] = 50  # Default middle value
+            # If no skills mapped to this type, use a neutral value
+            avg_skill_confidence[riasec_type] = 50
     
     # Create combined spider diagram
     categories = [cat.capitalize() for cat in st.session_state.riasec_scores.keys()]
@@ -128,7 +158,8 @@ def render_skills_analysis():
         fill='toself',
         name='Career Interests',
         line_color='#4CAF50',
-        fillcolor='rgba(76, 175, 80, 0.2)'
+        fillcolor='rgba(76, 175, 80, 0.2)',
+        line=dict(width=2)
     ))
     
     # Add Skills Confidence
@@ -139,18 +170,28 @@ def render_skills_analysis():
         fill='toself',
         name='Skills Confidence',
         line_color='#2196F3',
-        fillcolor='rgba(33, 150, 243, 0.2)'
+        fillcolor='rgba(33, 150, 243, 0.2)',
+        line=dict(width=2)
     ))
     
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 100]
+                range=[0, 100],
+                tickmode='linear',
+                tick0=0,
+                dtick=20
             )),
         showlegend=True,
         height=500,
-        title="Career Interests vs Skills Confidence"
+        title="Career Interests vs Skills Confidence",
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        )
     )
     
     st.plotly_chart(fig, use_container_width=True)
@@ -160,26 +201,36 @@ def render_skills_analysis():
     
     gaps = []
     alignments = []
+    opportunities = []
     
-    for riasec_type in st.session_state.riasec_scores.keys():
-        interest = riasec_values[list(st.session_state.riasec_scores.keys()).index(riasec_type)]
+    for i, riasec_type in enumerate(st.session_state.riasec_scores.keys()):
+        interest = riasec_values[i]
         confidence = avg_skill_confidence[riasec_type]
         gap = interest - confidence
         
         if gap > 20:
-            gaps.append((riasec_type, gap))
+            gaps.append((riasec_type, gap, interest, confidence))
         elif abs(gap) < 10:
-            alignments.append(riasec_type)
+            alignments.append((riasec_type, interest, confidence))
+        elif confidence > interest + 20:
+            opportunities.append((riasec_type, interest, confidence))
     
     if alignments:
-        st.success(f"✅ **Strong Alignment**: Your skills and interests align well in: {', '.join([a.capitalize() for a in alignments])}")
+        st.success("✅ **Strong Alignment**")
+        for riasec_type, interest, confidence in alignments:
+            st.markdown(f"- **{riasec_type.capitalize()}**: Your interests ({interest:.0f}%) and skills ({confidence:.0f}%) are well-aligned")
     
     if gaps:
-        st.warning("📈 **Development Opportunities**:")
-        for riasec_type, gap in gaps:
-            st.markdown(f"- **{riasec_type.capitalize()}**: Your interest is high but skills confidence could be improved")
+        st.warning("📈 **Development Opportunities**")
+        for riasec_type, gap, interest, confidence in gaps:
+            st.markdown(f"- **{riasec_type.capitalize()}**: High interest ({interest:.0f}%) but lower skill confidence ({confidence:.0f}%) - consider skill development")
     
-    # Top skills
+    if opportunities:
+        st.info("💡 **Hidden Strengths**")
+        for riasec_type, interest, confidence in opportunities:
+            st.markdown(f"- **{riasec_type.capitalize()}**: Strong skills ({confidence:.0f}%) with moderate interest ({interest:.0f}%) - explore new applications")
+    
+    # Top skills breakdown
     st.markdown("### Your Top Skills:")
     top_skills = sorted(st.session_state.skills_confidence.items(), key=lambda x: x[1], reverse=True)[:5]
     
@@ -194,16 +245,79 @@ def render_career_matches():
     """Render career recommendations"""
     st.subheader("🎯 Recommended Career Paths")
     
-    # Get career matches
+    # Get AI-generated career recommendations if available
+    openai_service = OpenAIService()
+    
+    user_profile = {
+        'riasec_scores': st.session_state.riasec_scores,
+        'skills_confidence': st.session_state.skills_confidence,
+        'work_values': st.session_state.work_values
+    }
+    
+    # Check if we have uploaded frameworks
+    uploaded_frameworks = st.session_state.get('uploaded_frameworks', {})
+    
+    # Generate AI recommendations
+    with st.spinner("Generating personalized career recommendations..."):
+        ai_recommendations = openai_service.generate_career_recommendations(
+            user_profile, 
+            uploaded_frameworks
+        )
+    
+    # Store in session state
+    st.session_state.career_recommendations = ai_recommendations
+    
+    # Display AI recommendations if available
+    if ai_recommendations:
+        st.markdown("### AI-Powered Career Recommendations")
+        st.caption("Based on your assessment results and any uploaded skill frameworks")
+        
+        for i, career in enumerate(ai_recommendations[:5]):
+            with st.expander(f"{i+1}. {career['title']} - {career['match_score']}% Match", expanded=(i==0)):
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    st.markdown(f"**Description:** {career['description']}")
+                    
+                    if career.get('activities'):
+                        st.markdown("**Key Activities:**")
+                        for activity in career['activities'][:4]:
+                            st.markdown(f"  • {activity}")
+                    
+                    if career.get('skills_to_develop'):
+                        st.markdown("**Skills to Develop:**")
+                        for skill in career['skills_to_develop'][:3]:
+                            st.markdown(f"  • {skill}")
+                
+                with col2:
+                    st.metric("Match Score", f"{career['match_score']}%")
+                    
+                    # Visual match indicator
+                    if career['match_score'] >= 80:
+                        st.success("Excellent Match")
+                    elif career['match_score'] >= 70:
+                        st.info("Good Match")
+                    else:
+                        st.warning("Moderate Match")
+                
+                if career.get('next_steps'):
+                    st.markdown("**Next Steps:**")
+                    for j, step in enumerate(career['next_steps'][:4], 1):
+                        st.markdown(f"{j}. {step}")
+    
+    # Also show traditional career matches
+    st.markdown("### Additional Career Matches")
+    st.caption("Based on standard RIASEC career matching")
+    
     careers = match_careers(
         st.session_state.riasec_scores,
         st.session_state.skills_confidence,
         st.session_state.work_values
     )
     
-    # Display top matches
-    for i, career in enumerate(careers[:5]):
-        with st.expander(f"{i+1}. {career['title']} - {career['match_score']}% Match", expanded=(i==0)):
+    # Display traditional matches
+    for i, career in enumerate(careers[:3]):
+        with st.expander(f"{career['title']} - {career['match_score']}% Match"):
             col1, col2 = st.columns([2, 1])
             
             with col1:
@@ -215,27 +329,6 @@ def render_career_matches():
                 st.metric("Match Score", f"{career['match_score']}%")
                 st.markdown(f"**Salary Range:** {career['salary_range']}")
                 st.markdown(f"**Growth:** {career['growth_outlook']}")
-            
-            # Match breakdown
-            st.markdown("**Why this matches your profile:**")
-            top_riasec = get_top_riasec_types(st.session_state.riasec_scores, 2)
-            career_riasec = career.get('riasec_profile', {})
-            
-            matching_types = []
-            for type_name, score in top_riasec:
-                if career_riasec.get(type_name, 0) >= 3:
-                    matching_types.append(type_name.capitalize())
-            
-            if matching_types:
-                st.markdown(f"- Aligns with your {' and '.join(matching_types)} interests")
-            
-            matching_skills = [s for s in career['required_skills'] if s in st.session_state.skills_confidence and st.session_state.skills_confidence[s] >= 70]
-            if matching_skills:
-                st.markdown(f"- Leverages your skills in: {', '.join(matching_skills)}")
-            
-            matching_values = list(set(career['work_environment']) & set(st.session_state.work_values))
-            if matching_values:
-                st.markdown(f"- Offers: {', '.join(matching_values)}")
 
 def render_development_plan():
     """Render personalized development plan"""
@@ -250,66 +343,130 @@ def render_development_plan():
         'work_values': st.session_state.work_values
     }
     
-    # Generate development plan
-    st.markdown("### Skill Development Priorities")
+    # Use career recommendations from previous tab if available
+    career_recommendations = st.session_state.get('career_recommendations', [])
     
-    # Identify skill gaps based on top career matches
-    careers = match_careers(
-        st.session_state.riasec_scores,
-        st.session_state.skills_confidence,
-        st.session_state.work_values
-    )
-    
-    # Collect required skills from top 3 careers
-    required_skills = set()
-    for career in careers[:3]:
-        required_skills.update(career['required_skills'])
-    
-    # Find skills to develop
-    skills_to_develop = []
-    for skill in required_skills:
-        if skill not in st.session_state.skills_confidence:
-            skills_to_develop.append((skill, 0))
-        elif st.session_state.skills_confidence[skill] < 70:
-            skills_to_develop.append((skill, st.session_state.skills_confidence[skill]))
-    
-    if skills_to_develop:
-        st.markdown("**Skills to Develop:**")
-        for skill, current_level in sorted(skills_to_develop, key=lambda x: x[1]):
-            col1, col2, col3 = st.columns([2, 1, 1])
+    if career_recommendations:
+        st.markdown("### Based on Your Top Career Matches")
+        
+        # Aggregate skills to develop from all recommendations
+        all_skills_to_develop = set()
+        for career in career_recommendations[:3]:
+            if career.get('skills_to_develop'):
+                all_skills_to_develop.update(career['skills_to_develop'])
+        
+        if all_skills_to_develop:
+            st.markdown("#### Priority Skills to Develop:")
+            
+            # Categorize skills
+            technical_skills = []
+            soft_skills = []
+            
+            for skill in all_skills_to_develop:
+                if any(word in skill.lower() for word in ['technical', 'programming', 'software', 'data', 'analysis', 'tools']):
+                    technical_skills.append(skill)
+                else:
+                    soft_skills.append(skill)
+            
+            col1, col2 = st.columns(2)
+            
             with col1:
-                st.markdown(f"• {skill}")
+                st.markdown("**Technical Skills:**")
+                for skill in technical_skills[:5]:
+                    st.markdown(f"• {skill}")
+            
+            with col2:
+                st.markdown("**Professional Skills:**")
+                for skill in soft_skills[:5]:
+                    st.markdown(f"• {skill}")
+    
+    # Skill gap analysis
+    st.markdown("### Skill Gap Analysis")
+    
+    # Identify skills below 70% confidence
+    skills_to_improve = [(skill, conf) for skill, conf in st.session_state.skills_confidence.items() if conf < 70]
+    
+    if skills_to_improve:
+        st.markdown("**Focus Areas for Improvement:**")
+        
+        # Sort by confidence (lowest first)
+        skills_to_improve.sort(key=lambda x: x[1])
+        
+        for skill, current_level in skills_to_improve[:5]:
+            col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+            with col1:
+                st.markdown(f"**{skill}**")
             with col2:
                 st.caption(f"Current: {current_level}%")
             with col3:
                 st.caption("Target: 80%")
+            with col4:
+                improvement_needed = 80 - current_level
+                st.caption(f"Gap: {improvement_needed}%")
     
     # Work values alignment
     st.markdown("### Work Environment Priorities")
     st.markdown("Based on your values, prioritize opportunities that offer:")
-    for value in st.session_state.work_values[:5]:
-        st.markdown(f"• {value}")
     
-    # Action steps
-    st.markdown("### Next Steps")
+    values_col1, values_col2 = st.columns(2)
     
-    col1, col2 = st.columns(2)
+    with values_col1:
+        for i, value in enumerate(st.session_state.work_values[:3]):
+            st.markdown(f"{i+1}. **{value}**")
     
-    with col1:
-        st.markdown("**Immediate Actions (Next 30 days):**")
-        st.markdown("1. Update your resume to highlight relevant skills")
-        st.markdown("2. Research top 3 career matches in detail")
-        st.markdown("3. Connect with professionals in target fields")
-        st.markdown("4. Identify learning resources for skill gaps")
+    with values_col2:
+        for i, value in enumerate(st.session_state.work_values[3:6], 4):
+            st.markdown(f"{i}. **{value}**")
     
-    with col2:
-        st.markdown("**Long-term Actions (3-6 months):**")
-        st.markdown("1. Complete online courses for skill development")
-        st.markdown("2. Seek projects that align with career interests")
-        st.markdown("3. Build portfolio demonstrating key skills")
-        st.markdown("4. Apply for positions matching your profile")
+    # Action steps with timeline
+    st.markdown("### Development Timeline")
     
-    # Download report button
+    timeline_tab1, timeline_tab2, timeline_tab3 = st.tabs(["Next 30 Days", "3-6 Months", "6-12 Months"])
+    
+    with timeline_tab1:
+        st.markdown("**Immediate Actions:**")
+        st.markdown("✓ Update resume highlighting your top skills and RIASEC alignment")
+        st.markdown("✓ Research your top 3 career matches in detail")
+        st.markdown("✓ Join 2-3 professional communities in your areas of interest")
+        st.markdown("✓ Schedule informational interviews with professionals in target roles")
+        st.markdown("✓ Create a learning plan for your top skill gaps")
+    
+    with timeline_tab2:
+        st.markdown("**Short-term Goals:**")
+        st.markdown("📚 Complete 1-2 online courses for priority skills")
+        st.markdown("🤝 Build network with 20+ professionals in target field")
+        st.markdown("💼 Gain practical experience through projects or volunteering")
+        st.markdown("📊 Create portfolio showcasing relevant skills")
+        st.markdown("🎯 Apply for 5-10 positions aligned with your profile")
+    
+    with timeline_tab3:
+        st.markdown("**Long-term Objectives:**")
+        st.markdown("🚀 Transition to role aligned with top RIASEC types")
+        st.markdown("📈 Achieve 80%+ confidence in all key skills")
+        st.markdown("🌟 Establish yourself in your chosen career path")
+        st.markdown("👥 Become a mentor to others in your field")
+        st.markdown("🎓 Consider advanced certifications or education")
+    
+    # Resources section
+    st.markdown("### Recommended Resources")
+    
+    resource_col1, resource_col2 = st.columns(2)
+    
+    with resource_col1:
+        st.markdown("**Online Learning Platforms:**")
+        st.markdown("• Coursera - University courses")
+        st.markdown("• LinkedIn Learning - Professional skills")
+        st.markdown("• Udemy - Technical skills")
+        st.markdown("• edX - Academic programs")
+    
+    with resource_col2:
+        st.markdown("**Professional Development:**")
+        st.markdown("• Industry associations")
+        st.markdown("• Local meetup groups")
+        st.markdown("• Online communities (Reddit, Discord)")
+        st.markdown("• Professional conferences")
+    
+    # Download and coaching buttons
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
