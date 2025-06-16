@@ -1,113 +1,83 @@
 import streamlit as st
+from data.work_values import work_values
 
-def render():
-    st.title("💎 Work Values Assessment")
-    st.markdown("Select the work values that are most important to you (choose up to 10)")
+def show_values_assessment():
+    st.markdown("""
+    <div style="text-align: center; padding: 20px;">
+        <h1>Work Values Assessment</h1>
+        <p style="font-size: 18px; color: #666;">Select your top 5 most important work values</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Work values options
-    all_values = [
-        "Work-Life Balance",
-        "Job Security",
-        "High Salary",
-        "Career Growth",
-        "Learning Opportunities",
-        "Flexibility",
-        "Remote Work",
-        "Teamwork",
-        "Independence",
-        "Leadership Opportunities",
-        "Recognition",
-        "Helping Others",
-        "Creativity",
-        "Innovation",
-        "Stability",
-        "Challenge",
-        "Variety",
-        "Travel Opportunities",
-        "Social Impact",
-        "Prestige",
-        "Autonomy",
-        "Structured Environment",
-        "Fast-Paced Environment",
-        "Work with Latest Technology",
-        "Mentorship",
-        "Company Culture",
-        "Benefits Package",
-        "Location",
-        "Small Company",
-        "Large Corporation"
-    ]
+    # Progress
+    st.progress(0.6)
     
-    # Initialize selected values
-    if 'temp_values' not in st.session_state:
-        st.session_state.temp_values = st.session_state.work_values.copy() if st.session_state.work_values else []
+    st.markdown("---")
     
-    # Display values in columns
-    st.markdown(f"**Selected: {len(st.session_state.temp_values)}/10**")
+    # Display selected count
+    selected_count = len(st.session_state.selected_values)
+    if selected_count < 5:
+        st.info(f"Selected: {selected_count}/5 values")
+    else:
+        st.success(f"✓ Selected: {selected_count}/5 values")
     
-    # Create value selection grid
-    cols = st.columns(3)
-    for i, value in enumerate(all_values):
-        with cols[i % 3]:
-            if st.checkbox(
-                value,
-                value=value in st.session_state.temp_values,
-                key=f"value_{value}",
-                disabled=len(st.session_state.temp_values) >= 10 and value not in st.session_state.temp_values
-            ):
-                if value not in st.session_state.temp_values:
-                    st.session_state.temp_values.append(value)
-            else:
-                if value in st.session_state.temp_values:
-                    st.session_state.temp_values.remove(value)
-    
-    # Show selected values summary
-    if st.session_state.temp_values:
-        st.markdown("---")
-        st.subheader("Your Selected Values:")
-        
-        # Categorize values
-        categories = {
-            "Lifestyle": ["Work-Life Balance", "Flexibility", "Remote Work", "Location", "Travel Opportunities"],
-            "Security": ["Job Security", "Stability", "Benefits Package", "Structured Environment"],
-            "Growth": ["Career Growth", "Learning Opportunities", "Leadership Opportunities", "Mentorship", "Challenge"],
-            "Rewards": ["High Salary", "Recognition", "Prestige"],
-            "Purpose": ["Helping Others", "Social Impact", "Creativity", "Innovation"],
-            "Environment": ["Teamwork", "Independence", "Autonomy", "Company Culture", "Small Company", "Large Corporation", "Fast-Paced Environment", "Work with Latest Technology", "Variety"]
-        }
-        
-        categorized_values = {}
-        for category, values in categories.items():
-            selected_in_category = [v for v in st.session_state.temp_values if v in values]
-            if selected_in_category:
-                categorized_values[category] = selected_in_category
-        
-        cols = st.columns(len(categorized_values))
-        for i, (category, values) in enumerate(categorized_values.items()):
-            with cols[i]:
-                st.markdown(f"**{category}:**")
-                for value in values:
-                    st.markdown(f"• {value}")
+    # Values grid
+    cols = st.columns(2)
+    for i, value in enumerate(work_values):
+        with cols[i % 2]:
+            # Checkbox for each value
+            selected = st.checkbox(
+                value['name'],
+                value=value['name'] in st.session_state.selected_values,
+                key=f"value_{value['name']}",
+                disabled=len(st.session_state.selected_values) >= 5 and value['name'] not in st.session_state.selected_values
+            )
+            
+            st.caption(value['description'])
+            
+            # Update selection
+            if selected and value['name'] not in st.session_state.selected_values:
+                st.session_state.selected_values.append(value['name'])
+            elif not selected and value['name'] in st.session_state.selected_values:
+                st.session_state.selected_values.remove(value['name'])
+            
+            st.markdown("---")
     
     # Navigation
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
+    col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back", use_container_width=True):
             st.session_state.current_step = 'skills'
-            st.session_state.game_progress = 40
             st.rerun()
     
-    with col3:
-        if st.button("Complete Assessment →", 
-                    disabled=len(st.session_state.temp_values) < 5,
-                    use_container_width=True):
-            st.session_state.work_values = st.session_state.temp_values.copy()
-            del st.session_state.temp_values
-            st.session_state.current_step = 'results'
+    with col2:
+        if st.button(
+            "Complete Assessment →", 
+            use_container_width=True,
+            disabled=len(st.session_state.selected_values) != 5
+        ):
+            # Update profile
+            st.session_state.user_profile['workValues'] = st.session_state.selected_values.copy()
+            st.session_state.user_profile['completedAssessments'].append('values')
+            
+            # Store in assessment history
+            st.session_state.assessment_history.append({
+                'type': 'values',
+                'data': st.session_state.selected_values.copy(),
+                'timestamp': 'current'
+            })
+            
+            # Calculate career matches
+            from utils.career_matcher import calculate_career_matches
+            st.session_state.recommended_careers = calculate_career_matches(st.session_state.user_profile)
+            
+            # Navigate based on persona
+            if st.session_state.selected_persona == 'individual':
+                st.session_state.current_step = 'results'
+            elif st.session_state.selected_persona == 'coach':
+                st.session_state.current_step = 'coaching'
+            else:
+                st.session_state.current_step = 'manager'
+            
             st.session_state.game_progress = 100
             st.rerun()
-    
-    if len(st.session_state.temp_values) < 5:
-        st.warning("Please select at least 5 values to continue.")

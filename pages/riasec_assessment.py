@@ -1,121 +1,86 @@
 import streamlit as st
+from data.riasec_questions import riasec_questions
 
-def render():
-    st.title("🎯 RIASEC Interest Assessment")
-    st.markdown("Rate how much you enjoy each activity on a scale of 1-5")
+def show_riasec_assessment():
+    st.markdown("""
+    <div style="text-align: center; padding: 20px;">
+        <h1>RIASEC Personality Assessment</h1>
+        <p style="font-size: 18px; color: #666;">Rate how much you agree with each statement</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # RIASEC questions
-    questions = {
-        'realistic': [
-            "Working with tools or machinery",
-            "Building or fixing things with your hands",
-            "Working outdoors or with nature",
-            "Operating equipment or vehicles",
-            "Working with plants or animals"
-        ],
-        'investigative': [
-            "Solving complex problems",
-            "Conducting research or experiments",
-            "Analyzing data or information",
-            "Learning about scientific theories",
-            "Working with abstract ideas"
-        ],
-        'artistic': [
-            "Creating original work (art, music, writing)",
-            "Expressing yourself creatively",
-            "Designing visual layouts or graphics",
-            "Performing for an audience",
-            "Working in unstructured environments"
-        ],
-        'social': [
-            "Helping others solve problems",
-            "Teaching or training people",
-            "Working in teams",
-            "Counseling or advising others",
-            "Organizing community activities"
-        ],
-        'enterprising': [
-            "Leading projects or teams",
-            "Persuading or influencing others",
-            "Making business decisions",
-            "Taking calculated risks",
-            "Selling products or ideas"
-        ],
-        'conventional': [
-            "Organizing files and records",
-            "Following established procedures",
-            "Working with numbers and data",
-            "Maintaining accurate records",
-            "Creating systems and processes"
-        ]
-    }
+    # Progress bar
+    progress = (len(st.session_state.riasec_answers) / len(riasec_questions)) * 100
+    st.progress(progress / 100)
     
-    # Initialize scores if not exists
-    if 'temp_riasec_scores' not in st.session_state:
-        st.session_state.temp_riasec_scores = {k: [] for k in questions.keys()}
+    # Questions
+    st.markdown("---")
     
-    # Display questions by category
-    for category, category_questions in questions.items():
-        st.subheader(f"{category.capitalize()} Activities")
+    for i, question in enumerate(riasec_questions):
+        st.markdown(f"**{i+1}. {question['text']}**")
         
-        cols = st.columns(5)
-        for i, question in enumerate(category_questions):
-            st.markdown(f"**{question}**")
-            
-            # Create radio buttons in columns
-            selected = None
-            for j, col in enumerate(cols):
-                with col:
-                    if st.button(
-                        str(j+1),
-                        key=f"{category}_{i}_{j+1}",
-                        use_container_width=True,
-                        type="secondary" if f"{category}_{i}" not in st.session_state else (
-                            "primary" if st.session_state.get(f"{category}_{i}") == j+1 else "secondary"
-                        )
-                    ):
-                        st.session_state[f"{category}_{i}"] = j+1
-                        st.rerun()
-            
-            # Show scale labels
-            if i == 0:
-                col1, col2, col3, col4, col5 = st.columns(5)
-                with col1:
-                    st.caption("Strongly Dislike")
-                with col5:
-                    st.caption("Strongly Enjoy")
-            
-            st.markdown("---")
-    
-    # Check if all questions answered
-    all_answered = True
-    for category in questions:
-        for i in range(len(questions[category])):
-            if f"{category}_{i}" not in st.session_state:
-                all_answered = False
-                break
+        # Create unique key for each question
+        key = f"riasec_{question['id']}"
+        
+        # Radio buttons for rating
+        rating = st.radio(
+            "Rate:",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: {
+                1: "Strongly Disagree",
+                2: "Disagree", 
+                3: "Neutral",
+                4: "Agree",
+                5: "Strongly Agree"
+            }[x],
+            horizontal=True,
+            key=key,
+            index=st.session_state.riasec_answers.get(question['id'], 3) - 1
+        )
+        
+        st.session_state.riasec_answers[question['id']] = rating
+        st.markdown("---")
     
     # Navigation
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← Back", use_container_width=True):
+            st.session_state.current_step = 'welcome'
+            st.rerun()
     
-    with col3:
-        if st.button("Next →", disabled=not all_answered, use_container_width=True):
-            # Calculate scores
-            for category in questions:
-                scores = []
-                for i in range(len(questions[category])):
-                    scores.append(st.session_state.get(f"{category}_{i}", 3))
-                st.session_state.riasec_scores[category] = sum(scores) / len(scores)
+    with col2:
+        if st.button("Continue →", use_container_width=True):
+            # Calculate RIASEC scores
+            scores = {
+                'realistic': 0,
+                'investigative': 0,
+                'artistic': 0,
+                'social': 0,
+                'enterprising': 0,
+                'conventional': 0
+            }
             
-            # Clear temporary scores
-            for category in questions:
-                for i in range(len(questions[category])):
-                    if f"{category}_{i}" in st.session_state:
-                        del st.session_state[f"{category}_{i}"]
+            for question in riasec_questions:
+                rating = st.session_state.riasec_answers.get(question['id'], 3)
+                scores[question['type']] += rating
             
+            # Normalize scores (0-5 scale)
+            questions_per_type = len(riasec_questions) // 6
+            for key in scores:
+                scores[key] = scores[key] / questions_per_type
+            
+            # Update profile
+            st.session_state.user_profile['riasecScores'] = scores
+            st.session_state.user_profile['completedAssessments'].append('riasec')
+            
+            # Store in assessment history for analytics
+            st.session_state.assessment_history.append({
+                'type': 'riasec',
+                'data': scores,
+                'timestamp': 'current'
+            })
+            
+            # Navigate to next step
             st.session_state.current_step = 'skills'
             st.session_state.game_progress = 40
             st.rerun()
-    
-    if not all_answered:
-        st.warning("Please answer all questions before proceeding.")

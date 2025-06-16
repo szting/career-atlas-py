@@ -1,59 +1,47 @@
 import streamlit as st
-from datetime import datetime, timedelta
 
-def check_simple_password():
-    """Simple password authentication with session management"""
+def check_password():
+    """Returns `True` if the user had the correct password."""
     
-    # Check if already authenticated and session is valid
-    if st.session_state.get('authenticated', False):
-        auth_time = st.session_state.get('auth_time')
-        if auth_time:
-            # Check if session expired (30 minutes)
-            if datetime.now() - auth_time < timedelta(minutes=30):
-                return True
-            else:
-                # Session expired
-                st.session_state.authenticated = False
-                st.warning("⏱️ Session expired. Please log in again.")
-    
-    # Show login form
-    st.title("🔐 Career Assessment Tool")
-    st.markdown("### Please enter the password to continue")
-    
-    # Center the login form
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        with st.form("login_form"):
-            password = st.text_input(
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if st.session_state["password"] == "Cl@r1tyC2r3r":
+            st.session_state["authenticated"] = True
+            del st.session_state["password"]  # Don't store password
+        else:
+            st.session_state["authenticated"] = False
+
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        # First run, show password input
+        st.markdown("""
+        <div style="text-align: center; padding: 50px;">
+            <h1>🎯 Career Assessment Tool</h1>
+            <p style="font-size: 18px; color: #666;">Please enter the password to continue</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.text_input(
                 "Password", 
                 type="password", 
-                placeholder="Enter password",
-                key="password_input"
+                on_change=password_entered, 
+                key="password",
+                placeholder="Enter password..."
             )
-            
-            submitted = st.form_submit_button("Login", use_container_width=True)
-            
-            if submitted:
-                if password == "Cl@r1tyC2r3r":
-                    st.session_state.authenticated = True
-                    st.session_state.auth_time = datetime.now()
-                    st.success("✅ Login successful!")
-                    st.rerun()
-                else:
-                    st.error("❌ Incorrect password. Please try again.")
+            if st.session_state.get("authenticated") == False and "password" not in st.session_state:
+                st.error("😕 Incorrect password. Please try again.")
+        
+        return False
     
-    # Footer
-    st.markdown("---")
-    st.caption("© 2024 Career Assessment Tool. All rights reserved.")
-    
-    return False
+    return True
 
 def logout():
-    """Clear authentication session"""
-    st.session_state.authenticated = False
-    if 'auth_time' in st.session_state:
-        del st.session_state.auth_time
-    # Clear all session state on logout
+    """Logout function to clear session state"""
     for key in list(st.session_state.keys()):
-        if key not in ['authenticated']:
+        if key != 'authenticated':
             del st.session_state[key]
+    st.session_state.authenticated = False

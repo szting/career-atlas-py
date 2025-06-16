@@ -1,16 +1,14 @@
-# Career Database
-
-careers_database = [
+careers = [
     {
-        'id': 'software-developer',
-        'title': 'Software Developer',
+        'id': 'software-engineer',
+        'title': 'Software Engineer',
         'description': 'Design, develop, and maintain software applications and systems',
         'primary_type': 'investigative',
         'secondary_type': 'realistic',
-        'required_skills': ['Programming', 'Problem Solving', 'Data Analysis', 'Innovation'],
-        'work_environment': ['Remote work options', 'Collaborative teams', 'Fast-paced', 'Technology-focused'],
+        'required_skills': ['Programming', 'Problem Solving', 'Analytical Thinking', 'Mathematics', 'Communication'],
+        'work_environment': ['Office', 'Remote', 'Tech companies', 'Flexible hours'],
         'salary_range': '$70,000 - $150,000',
-        'growth_outlook': 'Much faster than average (25% growth)',
+        'growth_outlook': 'Excellent - 22% growth expected',
         'education': "Bachelor's degree in Computer Science or related field"
     },
     {
@@ -19,82 +17,106 @@ careers_database = [
         'description': 'Create visual concepts to communicate ideas through images and layouts',
         'primary_type': 'artistic',
         'secondary_type': 'enterprising',
-        'required_skills': ['Design', 'Artistic Expression', 'Innovation', 'Communication'],
-        'work_environment': ['Creative freedom', 'Flexible schedule', 'Client interaction', 'Studio or remote'],
-        'salary_range': '$45,000 - $85,000',
-        'growth_outlook': 'Average (3% growth)',
-        'education': "Bachelor's degree in Graphic Design or Fine Arts"
-    },
-    {
-        'id': 'teacher',
-        'title': 'Teacher',
-        'description': 'Educate students and facilitate learning in various subjects',
-        'primary_type': 'social',
-        'secondary_type': 'conventional',
-        'required_skills': ['Teaching', 'Communication', 'Leadership', 'Problem Solving'],
-        'work_environment': ['School setting', 'Team collaboration', 'Structured schedule', 'Community impact'],
-        'salary_range': '$40,000 - $80,000',
-        'growth_outlook': 'Average (4% growth)',
-        'education': "Bachelor's degree and teaching certification"
-    },
-    {
-        'id': 'sales-manager',
-        'title': 'Sales Manager',
-        'description': 'Lead sales teams and develop strategies to meet revenue goals',
-        'primary_type': 'enterprising',
-        'secondary_type': 'social',
-        'required_skills': ['Leadership', 'Communication', 'Data Analysis', 'Problem Solving'],
-        'work_environment': ['Competitive environment', 'Team leadership', 'Travel opportunities', 'Performance-driven'],
-        'salary_range': '$60,000 - $140,000',
-        'growth_outlook': 'Average (5% growth)',
-        'education': "Bachelor's degree in Business or related field"
-    },
-    {
-        'id': 'mechanical-engineer',
-        'title': 'Mechanical Engineer',
-        'description': 'Design and develop mechanical systems and products',
-        'primary_type': 'realistic',
-        'secondary_type': 'investigative',
-        'required_skills': ['Problem Solving', 'Data Analysis', 'Innovation', 'Technical Skills'],
-        'work_environment': ['Laboratory or office', 'Project-based work', 'Team collaboration', 'Technical challenges'],
-        'salary_range': '$65,000 - $120,000',
-        'growth_outlook': 'Average (4% growth)',
-        'education': "Bachelor's degree in Mechanical Engineering"
-    },
-    {
-        'id': 'accountant',
-        'title': 'Accountant',
-        'description': 'Prepare and examine financial records for accuracy and compliance',
-        'primary_type': 'conventional',
-        'secondary_type': 'investigative',
-        'required_skills': ['Data Analysis', 'Problem Solving', 'Organization', 'Attention to Detail'],
-        'work_environment': ['Office setting', 'Structured work', 'Regular hours', 'Client interaction'],
-        'salary_range': '$50,000 - $95,000',
-        'growth_outlook': 'Average (4% growth)',
-        'education': "Bachelor's degree in Accounting or Finance"
+        'required_skills': ['Creativity', 'Design Software', 'Communication', 'Attention to Detail', 'Time Management'],
+        'work_environment': ['Creative studios', 'Flexible', 'Remote', 'Collaborative'],
+        'salary_range': '$40,000 - $85,000',
+        'growth_outlook': 'Good - 3% growth expected',
+        'education': "Bachelor's degree in Graphic Design or related field"
     },
     {
         'id': 'nurse',
         'title': 'Registered Nurse',
         'description': 'Provide medical care and support to patients in healthcare settings',
         'primary_type': 'social',
-        'secondary_type': 'realistic',
-        'required_skills': ['Communication', 'Problem Solving', 'Teamwork', 'Technical Skills'],
-        'work_environment': ['Healthcare facility', 'Shift work', 'Team collaboration', 'Direct patient care'],
+        'secondary_type': 'investigative',
+        'required_skills': ['Patient Care', 'Communication', 'Critical Thinking', 'Empathy', 'Physical Stamina'],
+        'work_environment': ['Hospitals', 'Clinics', 'Shift work', 'High-stress'],
         'salary_range': '$60,000 - $110,000',
-        'growth_outlook': 'Much faster than average (15% growth)',
-        'education': "Bachelor's degree in Nursing and RN license"
+        'growth_outlook': 'Excellent - 15% growth expected',
+        'education': "Bachelor's degree in Nursing + RN license"
     },
     {
-        'id': 'marketing-specialist',
-        'title': 'Marketing Specialist',
-        'description': 'Develop and implement marketing strategies to promote products or services',
+        'id': 'marketing-manager',
+        'title': 'Marketing Manager',
+        'description': 'Plan and execute marketing strategies to promote products and services',
         'primary_type': 'enterprising',
         'secondary_type': 'artistic',
-        'required_skills': ['Communication', 'Innovation', 'Data Analysis', 'Writing'],
-        'work_environment': ['Creative environment', 'Flexible work', 'Team collaboration', 'Fast-paced'],
-        'salary_range': '$45,000 - $90,000',
-        'growth_outlook': 'Faster than average (10% growth)',
-        'education': "Bachelor's degree in Marketing or Communications"
+        'required_skills': ['Leadership', 'Strategic Planning', 'Communication', 'Analytics', 'Creativity'],
+        'work_environment': ['Corporate offices', 'Fast-paced', 'Collaborative', 'Travel'],
+        'salary_range': '$65,000 - $135,000',
+        'growth_outlook': 'Good - 10% growth expected',
+        'education': "Bachelor's degree in Marketing or Business"
+    },
+    {
+        'id': 'accountant',
+        'title': 'Accountant',
+        'description': 'Prepare and examine financial records, ensure accuracy and compliance',
+        'primary_type': 'conventional',
+        'secondary_type': 'investigative',
+        'required_skills': ['Mathematics', 'Attention to Detail', 'Organization', 'Computer Skills', 'Ethics'],
+        'work_environment': ['Office', 'Stable hours', 'Quiet', 'Structured'],
+        'salary_range': '$50,000 - $95,000',
+        'growth_outlook': 'Stable - 7% growth expected',
+        'education': "Bachelor's degree in Accounting or Finance"
+    },
+    {
+        'id': 'mechanical-engineer',
+        'title': 'Mechanical Engineer',
+        'description': 'Design and develop mechanical systems and devices',
+        'primary_type': 'realistic',
+        'secondary_type': 'investigative',
+        'required_skills': ['Engineering', 'Problem Solving', 'Mathematics', 'CAD Software', 'Project Management'],
+        'work_environment': ['Manufacturing', 'Labs', 'Field work', 'Team-based'],
+        'salary_range': '$65,000 - $120,000',
+        'growth_outlook': 'Good - 9% growth expected',
+        'education': "Bachelor's degree in Mechanical Engineering"
+    },
+    {
+        'id': 'teacher',
+        'title': 'Elementary School Teacher',
+        'description': 'Educate and inspire young students in fundamental subjects',
+        'primary_type': 'social',
+        'secondary_type': 'artistic',
+        'required_skills': ['Teaching', 'Communication', 'Patience', 'Creativity', 'Organization'],
+        'work_environment': ['Schools', 'Structured hours', 'Interactive', 'Community-focused'],
+        'salary_range': '$40,000 - $75,000',
+        'growth_outlook': 'Stable - 7% growth expected',
+        'education': "Bachelor's degree + Teaching credential"
+    },
+    {
+        'id': 'data-scientist',
+        'title': 'Data Scientist',
+        'description': 'Analyze complex data to help organizations make better decisions',
+        'primary_type': 'investigative',
+        'secondary_type': 'conventional',
+        'required_skills': ['Statistics', 'Programming', 'Machine Learning', 'Data Visualization', 'Communication'],
+        'work_environment': ['Tech companies', 'Remote', 'Collaborative', 'Innovative'],
+        'salary_range': '$80,000 - $165,000',
+        'growth_outlook': 'Excellent - 35% growth expected',
+        'education': "Master's degree in Data Science or related field"
+    },
+    {
+        'id': 'entrepreneur',
+        'title': 'Entrepreneur/Business Owner',
+        'description': 'Start and manage your own business ventures',
+        'primary_type': 'enterprising',
+        'secondary_type': 'realistic',
+        'required_skills': ['Leadership', 'Risk Management', 'Innovation', 'Networking', 'Financial Management'],
+        'work_environment': ['Variable', 'High autonomy', 'Flexible', 'High-stress'],
+        'salary_range': 'Highly variable',
+        'growth_outlook': 'Depends on business success',
+        'education': 'Variable - Business knowledge helpful'
+    },
+    {
+        'id': 'psychologist',
+        'title': 'Clinical Psychologist',
+        'description': 'Assess and treat mental, emotional, and behavioral disorders',
+        'primary_type': 'investigative',
+        'secondary_type': 'social',
+        'required_skills': ['Psychology', 'Empathy', 'Communication', 'Research', 'Ethics'],
+        'work_environment': ['Private practice', 'Hospitals', 'Flexible hours', 'One-on-one'],
+        'salary_range': '$70,000 - $130,000',
+        'growth_outlook': 'Good - 14% growth expected',
+        'education': 'Doctoral degree in Psychology + License'
     }
 ]

@@ -1,12 +1,10 @@
-# Coaching Questions Database
-
 coaching_questions = [
-    # Realistic Type Questions
+    # Realistic
     {
-        'id': 'r-explore-1',
+        'id': 'r_explore_1',
         'category': 'exploration',
         'riasecFocus': 'realistic',
-        'question': 'What hands-on activities or projects have given you the most satisfaction?',
+        'question': 'What hands-on projects or activities have given you the most satisfaction?',
         'purpose': 'Identify specific practical interests and skills',
         'followUp': [
             'What made these experiences particularly rewarding?',
@@ -14,143 +12,134 @@ coaching_questions = [
         ]
     },
     {
-        'id': 'r-develop-1',
+        'id': 'r_develop_1',
         'category': 'development',
         'riasecFocus': 'realistic',
         'question': 'What technical or practical skills would you like to develop further?',
-        'purpose': 'Identify skill development opportunities',
+        'purpose': 'Plan skill development in practical areas',
         'followUp': [
             'What resources or training would help you develop these skills?',
-            'How would mastering these skills impact your career goals?'
+            'How would these skills enhance your career prospects?'
         ]
     },
     
-    # Investigative Type Questions
+    # Investigative
     {
-        'id': 'i-explore-1',
+        'id': 'i_explore_1',
         'category': 'exploration',
         'riasecFocus': 'investigative',
-        'question': 'What problems or mysteries do you find yourself naturally drawn to solving?',
-        'purpose': 'Uncover analytical interests and problem-solving preferences',
+        'question': 'What complex problems or mysteries fascinate you the most?',
+        'purpose': 'Uncover intellectual interests and analytical strengths',
         'followUp': [
-            'What methods do you typically use to investigate these problems?',
-            'How could you apply this curiosity in a professional setting?'
+            'How do you typically approach solving complex problems?',
+            'What fields allow you to engage with these types of challenges?'
         ]
     },
     {
-        'id': 'i-develop-1',
+        'id': 'i_develop_1',
         'category': 'development',
         'riasecFocus': 'investigative',
-        'question': 'What areas of knowledge would you like to explore more deeply?',
-        'purpose': 'Identify learning goals and intellectual interests',
+        'question': 'What research or analytical methods would you like to master?',
+        'purpose': 'Identify areas for intellectual growth',
         'followUp': [
-            'What specific topics within this area fascinate you most?',
-            'How might expertise in this area advance your career?'
+            'How would these skills apply to your career goals?',
+            'What projects could help you practice these methods?'
         ]
     },
     
-    # Artistic Type Questions
+    # Artistic
     {
-        'id': 'a-explore-1',
+        'id': 'a_explore_1',
         'category': 'exploration',
         'riasecFocus': 'artistic',
-        'question': 'How do you currently express your creativity, and how would you like to expand this?',
-        'purpose': 'Explore creative outlets and artistic aspirations',
+        'question': 'How do you express your creativity in your current life or work?',
+        'purpose': 'Discover creative outlets and artistic interests',
         'followUp': [
-            'What barriers prevent you from being more creative in your work?',
-            'What creative projects would you pursue if resources were unlimited?'
+            'What barriers prevent you from being more creative?',
+            'How could you bring more creativity into your career?'
         ]
     },
     {
-        'id': 'a-develop-1',
+        'id': 'a_develop_1',
         'category': 'development',
         'riasecFocus': 'artistic',
-        'question': 'What creative skills or techniques would enhance your professional value?',
-        'purpose': 'Connect creativity to career development',
+        'question': 'What creative skills or artistic abilities would you like to develop?',
+        'purpose': 'Plan creative skill development',
         'followUp': [
-            'How could you practice these skills in your current role?',
-            'What creative professionals do you admire and why?'
+            'What inspires your creative vision?',
+            'How might these skills open new career opportunities?'
         ]
     },
     
-    # Social Type Questions
+    # Social
     {
-        'id': 's-explore-1',
+        'id': 's_explore_1',
         'category': 'exploration',
         'riasecFocus': 'social',
         'question': 'Describe a time when you made a meaningful difference in someone\'s life.',
-        'purpose': 'Identify helping motivations and impact preferences',
+        'purpose': 'Identify helping motivations and interpersonal strengths',
         'followUp': [
-            'What aspects of helping others energize you most?',
-            'How could you create more opportunities for meaningful impact?'
+            'What aspects of helping others energize you?',
+            'How could you incorporate more meaningful interactions into your career?'
         ]
     },
     {
-        'id': 's-develop-1',
+        'id': 's_develop_1',
         'category': 'development',
         'riasecFocus': 'social',
-        'question': 'What interpersonal skills would help you be more effective in supporting others?',
-        'purpose': 'Identify relationship and communication skill gaps',
+        'question': 'What interpersonal or helping skills would strengthen your impact?',
+        'purpose': 'Plan development of social skills',
         'followUp': [
-            'Which of these skills would have the most immediate impact?',
-            'How could you practice these skills in low-stakes situations?'
+            'How would these skills help you serve others better?',
+            'What opportunities exist to practice these skills?'
         ]
     },
     
-    # Enterprising Type Questions
+    # Enterprising
     {
-        'id': 'e-explore-1',
+        'id': 'e_explore_1',
         'category': 'exploration',
         'riasecFocus': 'enterprising',
-        'question': 'What opportunities do you see that others might be missing?',
-        'purpose': 'Uncover entrepreneurial thinking and vision',
+        'question': 'What leadership or entrepreneurial experiences have been most rewarding?',
+        'purpose': 'Identify leadership style and business interests',
         'followUp': [
-            'What would it take to pursue these opportunities?',
-            'What\'s holding you back from taking action?'
+            'What challenges did you overcome in these situations?',
+            'How could you create more leadership opportunities?'
         ]
     },
     {
-        'id': 'e-develop-1',
+        'id': 'e_develop_1',
         'category': 'development',
         'riasecFocus': 'enterprising',
-        'question': 'What leadership or influence skills would accelerate your success?',
-        'purpose': 'Identify leadership development needs',
+        'question': 'What business or leadership competencies would accelerate your success?',
+        'purpose': 'Plan leadership development',
         'followUp': [
-            'What leadership challenges do you currently face?',
-            'Who are your leadership role models and what can you learn from them?'
+            'What experiences would help you build these competencies?',
+            'Who could mentor you in these areas?'
         ]
     },
     
-    # Conventional Type Questions
+    # Conventional
     {
-        'id': 'c-explore-1',
+        'id': 'c_explore_1',
         'category': 'exploration',
         'riasecFocus': 'conventional',
-        'question': 'What systems or processes have you improved or would like to improve?',
-        'purpose': 'Identify organizational interests and efficiency focus',
+        'question': 'What organizational systems or processes have you successfully improved?',
+        'purpose': 'Identify systematic thinking and organizational strengths',
         'followUp': [
-            'What inefficiencies frustrate you most in your current work?',
-            'How do you approach creating order from chaos?'
+            'What made these improvements successful?',
+            'How could you apply these skills in your career?'
         ]
     },
     {
-        'id': 'c-develop-1',
+        'id': 'c_develop_1',
         'category': 'development',
         'riasecFocus': 'conventional',
-        'question': 'What organizational or analytical tools would make you more effective?',
-        'purpose': 'Identify system and process skill needs',
+        'question': 'What organizational or analytical tools would enhance your effectiveness?',
+        'purpose': 'Plan systematic skill development',
         'followUp': [
-            'Which tools or methods have you been curious about?',
-            'How would mastering these tools impact your daily work?'
+            'How would mastering these tools benefit your work?',
+            'What certifications or training would be valuable?'
         ]
     }
 ]
-
-def get_coaching_questions(riasec_type, category=None):
-    """Get coaching questions filtered by RIASEC type and optionally by category"""
-    questions = [q for q in coaching_questions if q['riasecFocus'] == riasec_type]
-    
-    if category:
-        questions = [q for q in questions if q['category'] == category]
-    
-    return questions
